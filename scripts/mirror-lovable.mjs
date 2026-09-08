@@ -1,8 +1,10 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, normalize } from 'node:path';
 
 const ORIGIN = 'https://print54-algeria.lovable.app';
 const OUT = 'public';
+await rm(OUT, { recursive: true, force: true });
+await mkdir(OUT, { recursive: true });
 const queue = ['/'];
 const seen = new Set();
 
