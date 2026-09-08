@@ -1,9 +1,9 @@
 [build]
   publish = "public"
 
-# Temporary production bridge: serve the exact latest Print 54 build while the full source/assets migration is completed.
+# Live bridge to the latest Print 54 Lovable preview build while the source/assets migration is completed.
 [[redirects]]
   from = "/*"
-  to = "https://print54-algeria.lovable.app/:splat"
+  to = "https://id-preview--511be588-7214-4c13-8208-4fa0eb5a854a.lovable.app/:splat"
   status = 200
   force = true
