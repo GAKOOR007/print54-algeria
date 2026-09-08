@@ -1,6 +1,8 @@
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, normalize } from 'node:path';
 
+// Mirrors the currently published Print 54 Lovable build into a static Netlify deploy.
+// The Lovable project is published from its latest completed project state before Netlify is triggered.
 const ORIGIN = 'https://print54-algeria.lovable.app';
 const OUT = 'public';
 await rm(OUT, { recursive: true, force: true });
@@ -19,7 +21,7 @@ function sameOrigin(url) {
 }
 function candidates(text) {
   const found = new Set();
-  const re = /(?:src|href|url\(|import\(|sourceMappingURL=|"|')((?:\/|https?:\/\/)[^"'\s)<>]+)/g;
+  const re = /(?:src|href|url\\(|import\\(|sourceMappingURL=|\"|')((?:\\/|https?:\\/\\/)[^\"'\\s)<>]+)/g;
   let m;
   while ((m = re.exec(text))) {
     const raw = m[1].replace(/&amp;/g, '&');
@@ -40,7 +42,7 @@ async function fetchOne(path) {
   const buf = Buffer.from(await res.arrayBuffer());
   const out = localPath(url);
   await mkdir(dirname(out), { recursive: true });
-  if (type.includes('text') || /\.(html?|css|js|mjs|json|map|xml|svg)(\?|$)/i.test(url)) {
+  if (type.includes('text') || /\\.(html?|css|js|mjs|json|map|xml|svg)(\\?|$)/i.test(url)) {
     let text = buf.toString('utf8').replaceAll(ORIGIN, '');
     await writeFile(out, text);
     for (const next of candidates(text)) queue.push(next);
