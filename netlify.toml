@@ -1,9 +1,6 @@
 [build]
+  command = "node scripts/mirror-lovable.mjs"
   publish = "public"
 
-# Live bridge to the latest Print 54 Lovable preview build while the source/assets migration is completed.
-[[redirects]]
-  from = "/*"
-  to = "https://id-preview--511be588-7214-4c13-8208-4fa0eb5a854a.lovable.app/:splat"
-  status = 200
-  force = true
+[build.environment]
+  NODE_VERSION = "22"
