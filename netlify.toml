@@ -1,8 +1,0 @@
-[build]
-  publish = "public"
-
-[[redirects]]
-  from = "/*"
-  to = "https://print54-algeria.lovable.app/:splat"
-  status = 200
-  force = true
