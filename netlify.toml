@@ -1,6 +1,7 @@
 [build]
   publish = "public"
 
+# Temporary production bridge: serve the exact latest Print 54 build while the full source/assets migration is completed.
 [[redirects]]
   from = "/*"
   to = "https://print54-algeria.lovable.app/:splat"
