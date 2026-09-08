@@ -3,6 +3,5 @@
 
 [[redirects]]
   from = "/*"
-  to = "https://print54-algeria.lovable.app/:splat"
+  to = "/index.html"
   status = 200
-  force = true
