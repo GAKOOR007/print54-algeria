@@ -9,46 +9,47 @@ export default {
 
     let html = await response.text();
 
-    // Remove generated Lovable badge styles and its external font definition.
+    // Remove all generated Lovable badge styles and its external font definition.
     html = html.replace(/<style[^>]*>[\s\S]*?(?:lovable-badge|CameraPlainVariable)[\s\S]*?<\/style>/gi, "");
     html = html.replace(/@import\s+url\(["']?https:\/\/cdn\.gpteng\.co\/mcp-widgets\/v1\/fonts\/CameraPlainVariable\.woff2[^)]*\)[^;]*;?/gi, "");
 
-    // Remove the Lovable badge from server-rendered HTML, including nested elements.
-    const marker = '<div id="lovable-badge"';
-    let start = html.indexOf(marker);
-    while (start !== -1) {
-      let depth = 0;
-      let pos = start;
-      let removed = false;
-
-      while (pos < html.length) {
-        const nextOpen = html.indexOf("<div", pos);
-        const nextClose = html.indexOf("</div>", pos);
-        if (nextClose === -1) break;
-
-        if (nextOpen !== -1 && nextOpen < nextClose) {
-          depth++;
-          pos = nextOpen + 4;
-        } else {
-          depth--;
-          pos = nextClose + 6;
-          if (depth === 0) {
-            html = html.slice(0, start) + html.slice(pos);
-            removed = true;
-            break;
+    // Remove every Lovable badge element from server-rendered HTML, regardless of tag name or nesting.
+    const removeLovableBadge = (source) => {
+      const open = /<([a-zA-Z][\w:-]*)\b[^>]*\bid\s*=\s*["']lovable-badge["'][^>]*>/i;
+      let match;
+      while ((match = open.exec(source))) {
+        const tag = match[1];
+        const start = match.index;
+        const bodyStart = start + match[0].length;
+        const token = new RegExp(`<\\/?${tag}\\b[^>]*>`, "gi");
+        token.lastIndex = bodyStart;
+        let depth = 1;
+        let end = source.length;
+        let tokenMatch;
+        while ((tokenMatch = token.exec(source))) {
+          if (/^<\//.test(tokenMatch[0])) {
+            depth--;
+            if (depth === 0) {
+              end = tokenMatch.index + tokenMatch[0].length;
+              break;
+            }
+          } else if (!/\/\s*>$/.test(tokenMatch[0])) {
+            depth++;
           }
         }
+        source = source.slice(0, start) + source.slice(end);
       }
+      return source;
+    };
 
-      start = removed ? html.indexOf(marker) : -1;
-    }
+    html = removeLovableBadge(html);
 
-    // Remove the Lovable helper script as well; the independent site must not load it.
+    // Remove Lovable's helper/analytics script from the independent deployment.
     html = html.replace(/<script[^>]+src=["'][^"']*\/~flock\.js[^"']*["'][^>]*><\/script>/gi, "");
 
-    // Defense in depth: remove/hide any badge recreated by client-side code.
-    const killer = `<style id="print54-no-lovable-badge">#lovable-badge,#lovable-badge *{display:none!important;visibility:hidden!important;pointer-events:none!important}</style><script>(function(){function x(){document.querySelectorAll('#lovable-badge').forEach(function(e){e.remove()});}x();new MutationObserver(x).observe(document.documentElement,{childList:true,subtree:true});})();</script>`;
-    html = html.replace("</head>", `${killer}</head>`);
+    // Defense in depth: if any client-side code recreates a Lovable badge, remove it immediately.
+    const killer = `<style id="print54-no-lovable-badge">#lovable-badge,#lovable-badge *,[id*="lovable-badge"],[class*="lovable-badge"]{display:none!important;visibility:hidden!important;pointer-events:none!important}</style><script>(function(){function purge(){document.querySelectorAll('#lovable-badge,[id*="lovable-badge"],[class*="lovable-badge"]').forEach(function(e){e.remove()});}purge();new MutationObserver(purge).observe(document.documentElement,{childList:true,subtree:true});})();</script>`;
+    html = html.replace(/<\/head>/i, `${killer}</head>`);
 
     const headers = new Headers(response.headers);
     headers.delete("content-length");
