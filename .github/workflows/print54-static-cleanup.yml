@@ -1,0 +1,61 @@
+name: One-time Print 54 static cleanup
+on:
+  push:
+    branches: [independent-migration]
+permissions:
+  contents: write
+jobs:
+  cleanup:
+    if: github.event.head_commit.message != 'One-time cleanup: remove Lovable-only metadata'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Clean generated static snapshot
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('public/index.html')
+          s = p.read_text()
+          s = s.replace('https://images.unsplash.com/photo-1601924582970-9238bcb495d9?w=1200', '/assets/hero-print-gDiRb7F0.jpg')
+          s = s.replace('https://print-54-algeria-hub.lovable.app', 'https://print54-algeria.pages.dev')
+          start = s.find("\n<style>\n\t@font-face {\n\t\tfont-family: 'CameraPlainVariable';")
+          end = s.find("</style>", start)
+          if start != -1 and end != -1:
+              s = s[:start] + s[end + len('</style>'):]
+          # Remove the generated Lovable badge element, preserving all other markup.
+          marker = '<div id="lovable-badge"'
+          start = s.find(marker)
+          if start != -1:
+              depth = 0
+              pos = start
+              while True:
+                  open_tag = s.find('<div', pos)
+                  close_tag = s.find('</div>', pos)
+                  if close_tag == -1:
+                      break
+                  if open_tag != -1 and open_tag < close_tag:
+                      depth += 1
+                      pos = open_tag + 4
+                  else:
+                      depth -= 1
+                      pos = close_tag + 6
+                      if depth == 0:
+                          s = s[:start] + s[pos:]
+                          break
+          p.write_text(s)
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/index.html
+          git commit -m 'One-time cleanup: remove Lovable-only metadata'
+          git push
+      - name: Remove one-time workflow
+        if: always()
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          rm -f .github/workflows/print54-static-cleanup.yml
+          git add -A
+          git commit -m 'Remove one-time cleanup workflow' || true
+          git push || true
